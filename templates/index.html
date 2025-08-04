@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KC4CA Image Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>KC4CA Image Generator</h1>
+            <p>Generate images from text prompts using OpenAI's DALL-E models</p>
+        </header>
+
+        <main>
+            <section class="generator-section">
+                <form id="image-form">
+                    <div class="form-group">
+                        <label for="prompt">Prompt:</label>
+                        <textarea id="prompt" name="prompt" required placeholder="Enter a detailed description of the image you want to generate..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="model">Model:</label>
+                            <select id="model" name="model" required>
+                                {% for model in models %}
+                                <option value="{{ model }}">{{ model }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="n">Number of Images (1-10):</label>
+                            <input type="number" id="n" name="n" min="1" max="10" value="1" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="size">Image Size:</label>
+                            <select id="size" name="size" required>
+                                <option value="1024x1024">1024x1024 (Square)</option>
+                                <option value="1792x1024">1792x1024 (Landscape)</option>
+                                <option value="1024x1792">1024x1792 (Portrait)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quality">Quality:</label>
+                            <select id="quality" name="quality">
+                                <option value="standard">Standard</option>
+                                <option value="hd">HD</option>
+                            </select>
+                        </div>
+                    </div>
+
+
+                    <button type="submit" id="generate-btn">Generate Images</button>
+                </form>
+            </section>
+
+            <section class="session-section">
+                <div class="session-controls">
+                    <button id="export-btn">Export Session</button>
+                    <div class="import-container">
+                        <input type="file" id="import-file" accept=".json">
+                        <button id="import-btn">Import Session</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="loading-section" id="loading-section" style="display: none;">
+                <div class="spinner"></div>
+                <p>Generating your images...</p>
+            </section>
+
+            <section class="images-section">
+                <h2>Generated Images</h2>
+                <div id="images-container" class="images-container">
+                    {% if images %}
+                        {% for image in images %}
+                        <div class="image-card">
+                            <img src="{{ image.image_path }}" alt="{{ image.prompt }}">
+                            <div class="image-info">
+                                <p><strong>Prompt:</strong> {{ image.prompt }}</p>
+                                <p><strong>Model:</strong> {{ image.model }}</p>
+                                <p><strong>Size:</strong> {{ image.size }}</p>
+                                <p><strong>Quality:</strong> {{ image.quality }}</p>
+                                <p><strong>Generated:</strong> {{ image.timestamp }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p id="no-images-message">No images generated yet. Create your first image above!</p>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 KC4CA Image Generator</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
