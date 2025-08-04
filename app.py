@@ -8,6 +8,9 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_file, session
 from flask_session import Session
+from PIL import Image
+import io
+from admin_panel import admin_bp
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +23,8 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SESSION_TYPE'] = os.getenv('SESSION_TYPE')
 app.config['SESSION_FILE_DIR'] = os.getenv('SESSION_FILE_DIR')
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+app.config['ADMIN_PASSWORD'] = os.getenv('ADMIN_PASSWORD')
+app.config['DATABASE_PATH'] = os.getenv('DATABASE_PATH')
 
 # Initialize Flask-Session
 Session(app)
@@ -27,6 +32,9 @@ Session(app)
 # Database path
 DATABASE_PATH = os.getenv('DATABASE_PATH')
 SESSION_FILE_DIR = os.getenv('SESSION_FILE_DIR')
+
+# Register the admin blueprint
+app.register_blueprint(admin_bp)
 
 # Create necessary directories
 os.makedirs(SESSION_FILE_DIR, exist_ok=True)
@@ -63,7 +71,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-def save_image_to_server(image_data, format, filename_prefix):
+def save_image_to_server(image_data, format, filename_prefix, model_name=None):
     """
     Save image data to the server.
     
@@ -71,12 +79,26 @@ def save_image_to_server(image_data, format, filename_prefix):
         image_data: Image data (URL, data URL, or base64)
         format: Format of the image data ('url' or 'b64_json')
         filename_prefix: Prefix for the filename
+        model_name: Name of the model used to generate the image
     
     Returns:
         str: Relative path to the saved image
     """
-    filename = f"{filename_prefix}_{uuid.uuid4().hex}.png"
+    # Include model name in filename if provided
+    if model_name:
+        # Sanitize model name to remove special characters
+        sanitized_model_name = "".join(c for c in model_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        filename = f"{filename_prefix}_{sanitized_model_name}_{uuid.uuid4().hex}.png"
+    else:
+        filename = f"{filename_prefix}_{uuid.uuid4().hex}.png"
+        
     filepath = os.path.join('static/generated_images', filename)
+    
+    # Create thumbnails directory if it doesn't exist
+    thumbnails_dir = os.path.join('static', 'thumbnails')
+    os.makedirs(thumbnails_dir, exist_ok=True)
+    thumbnail_filename = f"thumb_{filename}"
+    thumbnail_filepath = os.path.join(thumbnails_dir, thumbnail_filename)
     
     if format == 'url':
         # Handle different types of URLs
@@ -86,22 +108,57 @@ def save_image_to_server(image_data, format, filename_prefix):
             image_bytes = base64.b64decode(encoded)
             with open(filepath, 'wb') as f:
                 f.write(image_bytes)
+            # Generate thumbnail from saved image
+            generate_thumbnail(filepath, thumbnail_filepath)
         else:
             # Handle regular URL
             response = requests.get(image_data)
             with open(filepath, 'wb') as f:
                 f.write(response.content)
+            # Generate thumbnail from saved image
+            generate_thumbnail(filepath, thumbnail_filepath)
     elif format == 'b64_json':
         # Handle base64 data
         if image_data:
             image_bytes = base64.b64decode(image_data)
             with open(filepath, 'wb') as f:
                 f.write(image_bytes)
+            # Generate thumbnail from saved image
+            generate_thumbnail(filepath, thumbnail_filepath)
         else:
             # If b64_json is None, we can't save the image
             raise ValueError("Base64 data is None")
     
     return f"/static/generated_images/{filename}"
+
+def generate_thumbnail(image_path, thumbnail_path, size=(200, 200)):
+    """
+    Generate a thumbnail for the given image.
+    
+    Args:
+        image_path: Path to the original image
+        thumbnail_path: Path where the thumbnail should be saved
+        size: Tuple of (width, height) for the thumbnail
+    """
+    try:
+        with Image.open(image_path) as img:
+            # Convert to RGB if necessary (for PNG files with transparency)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                img = img.convert('RGB')
+            
+            # Create thumbnail
+            img.thumbnail(size, Image.Resampling.LANCZOS)
+            
+            # Save thumbnail
+            img.save(thumbnail_path, 'JPEG', quality=80)
+    except Exception as e:
+        print(f"Error generating thumbnail: {e}")
+        # If thumbnail generation fails, copy the original image
+        try:
+            from shutil import copy2
+            copy2(image_path, thumbnail_path)
+        except Exception as copy_error:
+            print(f"Error copying image as thumbnail: {copy_error}")
 
 # Initialize the database when the app starts
 init_db()
@@ -219,7 +276,8 @@ def generate_image():
                     image_path = save_image_to_server(
                         image_data, 
                         image_format, 
-                        'generated_image'
+                        'generated_image',
+                        model
                     )
                     
                     # Save metadata to database
@@ -362,43 +420,6 @@ def import_session():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/admin')
-def admin():
-    """Admin panel to view and manage images."""
-    # Simple password protection (in a real app, you'd want proper authentication)
-    admin_password = os.getenv('ADMIN_PASSWORD')
-    provided_password = request.args.get('password')
-    
-    if not provided_password or provided_password != admin_password:
-        return jsonify({'error': 'Unauthorized access'}), 401
-    
-    # Get all images from database
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT id, session_id, prompt, model, size, quality, image_path, timestamp 
-        FROM images 
-        ORDER BY timestamp DESC
-    ''')
-    
-    images = cursor.fetchall()
-    conn.close()
-    
-    # Convert to list of dictionaries
-    image_data = []
-    for img in images:
-        image_data.append({
-            'id': img[0],
-            'session_id': img[1],
-            'prompt': img[2],
-            'model': img[3],
-            'size': img[4],
-            'quality': img[5],
-            'image_path': img[6],
-            'timestamp': img[7]
-        })
-    
-    return jsonify({'images': image_data})
 
 if __name__ == '__main__':
     init_db()

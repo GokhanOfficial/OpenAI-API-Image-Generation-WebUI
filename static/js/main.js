@@ -160,8 +160,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const imageCard = document.createElement('div');
             imageCard.className = 'image-card';
             
+            // Create thumbnail URL by replacing the path
+            const thumbnailUrl = image.image_path.replace('/static/generated_images/', '/static/thumbnails/thumb_');
+            
             imageCard.innerHTML = `
-                <img src="${image.image_path}" alt="${image.prompt}">
+                <div class="thumbnail-container">
+                    <img src="${thumbnailUrl}" alt="${image.prompt}" class="thumbnail" data-fullsize="${image.image_path}">
+                </div>
                 <div class="image-info">
                     <p><strong>Prompt:</strong> ${image.prompt}</p>
                     <p><strong>Model:</strong> ${image.model}</p>
@@ -172,7 +177,65 @@ document.addEventListener('DOMContentLoaded', function() {
             
             imagesContainer.prepend(imageCard);
         });
+        
+        // Add click event listeners to thumbnails
+        addThumbnailClickListeners();
     }
+    
+    // Function to add click event listeners to thumbnails
+    function addThumbnailClickListeners() {
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                const fullSizeUrl = this.getAttribute('data-fullsize');
+                showFullSizeImage(fullSizeUrl);
+            });
+        });
+    }
+    
+    // Function to show full-size image in a modal
+    function showFullSizeImage(imageUrl) {
+        // Create modal elements
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <img src="${imageUrl}" alt="Full size image" class="full-size-image">
+                <div class="modal-actions">
+                    <button id="download-btn">Download Image</button>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to document
+        document.body.appendChild(modal);
+        
+        // Add event listeners
+        const closeBtn = modal.querySelector('.close');
+        const downloadBtn = modal.querySelector('#download-btn');
+        
+        closeBtn.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = imageUrl.split('/').pop();
+            link.click();
+        });
+        
+        // Close modal when clicking outside the content
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+    }
+    
+    // Add click listeners to existing thumbnails when page loads
+    addThumbnailClickListeners();
 
     // Function to show/hide loading indicator
     function showLoading(show) {

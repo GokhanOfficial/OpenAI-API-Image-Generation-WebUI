@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=production
+    volumes:
+      - ./flask_session:/app/flask_session
+      - ./static/generated_images:/app/static/generated_images
+      - ./static/thumbnails:/app/static/thumbnails
+      - ./.env:/app/.env
+    restart: unless-stopped

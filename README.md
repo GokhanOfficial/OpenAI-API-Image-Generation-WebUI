@@ -1,20 +1,22 @@
 # KC4CA Image Generator
 
-A Flask web application that leverages OpenAI's DALL-E models to generate images from text prompts. The application allows users to generate images, persistently store them and their metadata in a SQLite3 database linked to user sessions, and manage their image history.
+A Flask web application that leverages various AI image generation models to generate images from text prompts. The application allows users to generate images, persistently store them and their metadata in a SQLite3 database linked to user sessions, and manage their image history.
 
 ## Features
 
-- Generate images using OpenAI's DALL-E 2 and DALL-E 3 models
+- Generate images using various AI models (DALL-E, Qwen, Flux, etc.)
 - Store generated images and metadata in a SQLite3 database
 - Session-based image management
 - Export and import image history as JSON files
 - Responsive web interface with modern UI
+- Thumbnail support for reduced bandwidth usage
 - Admin panel for managing all images
+- Modular architecture with separate admin gallery
 
 ## Prerequisites
 
 - Python 3.7 or higher
-- OpenAI API key
+- API key for the image generation service
 - pip (Python package installer)
 
 ## Installation
@@ -37,17 +39,17 @@ A Flask web application that leverages OpenAI's DALL-E models to generate images
    ```
 
 4. Set up environment variables:
-   - Rename `.env.example` to `.env`
-   - Update the values in `.env` with your actual OpenAI API key and other configurations
+   Edit the `.env` file with your actual API key and other configurations
 
 ## Configuration
 
 Edit the `.env` file to configure the application:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=your_api_key_here
+OPENAI_API_ENDPOINT=https://api.kc4ca.com.tr/v1/images/generations
 SECRET_KEY=your_secret_key_here
-OPENAI_MODELS=dall-e-2,dall-e-3
+OPENAI_MODELS=gpt-image-1,qwen-image,imagen-4,flux.1-krea-dev,flux.1-kontext-pro,flux.1-kontext-max,v1/gpt-image-1
 SESSION_TYPE=filesystem
 SESSION_FILE_DIR=./flask_session
 DATABASE_PATH=database.db
@@ -73,24 +75,30 @@ ADMIN_PASSWORD=your_admin_password_here
 
 Access the admin panel by navigating to `http://localhost:5000/admin?password=your_admin_password_here`
 
-The admin panel provides a JSON view of all generated images in the database.
+The admin panel provides a gallery view of all generated images with filtering and deletion capabilities.
 
 ## Project Structure
 
 ```
 image_generator/
 ├── .env
-├── app.py
+├── .gitignore
+├── app.py                 (Main Flask application)
+├── admin_panel.py         (Admin panel blueprint)
 ├── requirements.txt
-├── database.db          (SQLite3 database file)
+├── database.db            (SQLite3 database file)
 ├── static/
 │   ├── css/
-│   │   └── style.css
-│   └── js/
-│       └── main.js
-│   └── generated_images/  (Directory for storing generated image files locally)
+│   │   ├── style.css
+│   │   ├── error.css
+│   │   └── modal.css
+│   ├── js/
+│   │   └── main.js
+│   ├── generated_images/  (Directory for storing generated image files)
+│   └── thumbnails/        (Directory for storing image thumbnails)
 └── templates/
-    └── index.html
+    ├── index.html         (Main application template)
+    └── admin_gallery.html (Admin gallery template)
 ```
 
 ## Dependencies
@@ -99,6 +107,7 @@ image_generator/
 - python-dotenv: Environment variable management
 - requests: HTTP library for API calls
 - Flask-Session: Server-side session management
+- Pillow: Image processing library
 
 ## License
 

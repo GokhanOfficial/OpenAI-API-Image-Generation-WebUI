@@ -153,6 +153,7 @@ flask_session/
 
 # Generated images
 static/generated_images/
+static/thumbnails/
 
 # Log files
 *.log

@@ -6,6 +6,7 @@
     <title>KC4CA Image Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
 </head>
 <body>
     <div class="container">
@@ -43,8 +44,8 @@
                             <label for="size">Image Size:</label>
                             <select id="size" name="size" required>
                                 <option value="1024x1024">1024x1024 (Square)</option>
-                                <option value="1792x1024">1792x1024 (Landscape)</option>
-                                <option value="1024x1792">1024x1792 (Portrait)</option>
+                                <option value="1536x1024">1536x1024 (Landscape)</option>
+                                <option value="1024x1536">1024x1536 (Portrait)</option>
                             </select>
                         </div>
 
@@ -81,18 +82,23 @@
                 <h2>Generated Images</h2>
                 <div id="images-container" class="images-container">
                     {% if images %}
-                        {% for image in images %}
-                        <div class="image-card">
-                            <img src="{{ image.image_path }}" alt="{{ image.prompt }}">
-                            <div class="image-info">
-                                <p><strong>Prompt:</strong> {{ image.prompt }}</p>
-                                <p><strong>Model:</strong> {{ image.model }}</p>
-                                <p><strong>Size:</strong> {{ image.size }}</p>
-                                <p><strong>Quality:</strong> {{ image.quality }}</p>
-                                <p><strong>Generated:</strong> {{ image.timestamp }}</p>
-                            </div>
+                    {% for image in images %}
+                    <div class="image-card">
+                        <div class="thumbnail-container">
+                            <img src="{{ image.image_path.replace('/static/generated_images/', '/static/thumbnails/thumb_') }}" 
+                                 alt="{{ image.prompt }}" 
+                                 class="thumbnail"
+                                 data-fullsize="{{ image.image_path }}">
                         </div>
-                        {% endfor %}
+                        <div class="image-info">
+                            <p><strong>Prompt:</strong> {{ image.prompt }}</p>
+                            <p><strong>Model:</strong> {{ image.model }}</p>
+                            <p><strong>Size:</strong> {{ image.size }}</p>
+                            <p><strong>Quality:</strong> {{ image.quality }}</p>
+                            <p><strong>Generated:</strong> {{ image.timestamp }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
                     {% else %}
                         <p id="no-images-message">No images generated yet. Create your first image above!</p>
                     {% endif %}

@@ -192,11 +192,26 @@ button:hover {
     transform: translateY(-5px);
 }
 
-.image-card img {
+.thumbnail-container {
     width: 100%;
-    height: 250px;
-    object-fit: cover;
-    display: block;
+    height: 200px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+}
+
+.thumbnail {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.thumbnail:hover {
+    transform: scale(1.05);
 }
 
 .image-info {
