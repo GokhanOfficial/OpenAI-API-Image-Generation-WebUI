@@ -58,6 +58,8 @@ ADMIN_PASSWORD=your_admin_password_here
 
 ## Usage
 
+### Development Mode
+
 1. Start the Flask application:
    ```
    python app.py
@@ -70,6 +72,25 @@ ADMIN_PASSWORD=your_admin_password_here
 4. Use the "Export Session" button to download your image history as a JSON file
 
 5. Use the "Import Session" button to restore a previously exported image history
+
+### Production Mode with Docker
+
+1. Build and start the application using Docker Compose:
+   ```
+   docker-compose up -d
+   ```
+
+2. Open your web browser and navigate to `http://localhost:5001`
+
+3. The application will persist data in the following directories:
+   - `flask_session/` - Flask session data
+   - `static/generated_images/` - Generated images
+   - `static/thumbnails/` - Image thumbnails
+
+4. To stop the application:
+   ```
+   docker-compose down
+   ```
 
 ## Admin Panel
 
